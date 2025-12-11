@@ -81,7 +81,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Bundle
-        run: npm run gulp bundle-vscode-reh-web-linux-${{ matrix.arch }}
+        run: npm run gulp bundle-vscode-reh-web
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
