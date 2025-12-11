@@ -37,10 +37,14 @@ jobs:
       - name: Setup swap space (to handle memory-intensive builds)
         if: runner.os == 'Linux'
         run: |
-          sudo fallocate -l 8G /swapfile
-          sudo chmod 600 /swapfile
-          sudo mkswap /swapfile
-          sudo swapon /swapfile
+          # Use unique swapfile path to avoid conflicts
+          SWAPFILE="/mnt/vscode-build-swap"
+          if [ ! -f "$SWAPFILE" ]; then
+            sudo fallocate -l 8G "$SWAPFILE" || sudo dd if=/dev/zero of="$SWAPFILE" bs=1M count=8192
+            sudo chmod 600 "$SWAPFILE"
+            sudo mkswap "$SWAPFILE"
+          fi
+          sudo swapon "$SWAPFILE" || true
           sudo swapon --show
           free -h
 
