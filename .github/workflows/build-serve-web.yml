@@ -19,7 +19,7 @@ jobs:
         include:
           - os: ubuntu-22.04
             arch: x64
-          - os: ubuntu-22.04-arm64
+          - os: ubuntu-22.04-arm
             arch: arm64
 
     runs-on: ${{ matrix.os }}
