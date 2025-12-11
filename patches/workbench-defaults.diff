@@ -1,19 +1,19 @@
 Set default workbench settings for web mode
 
 Configures the web workbench to start without a welcome page and with
-the secondary sidebar hidden by default. Also supports ?theme= query
-parameter to set the color theme.
-
-Index: vscode/src/vs/server/node/webClientServer.ts
-===================================================================
+the secondary sidebar hidden by default. Also supports ?theme= and ?label=
+query parameters to set the color theme and command center label.
+diff --git a/src/vs/server/node/webClientServer.ts b/src/vs/server/node/webClientServer.ts
+index 13882a9b44b..f6bc8bb6a37 100644
 --- vscode.orig/src/vs/server/node/webClientServer.ts
 +++ vscode/src/vs/server/node/webClientServer.ts
-@@ -357,6 +357,19 @@ export class WebClientServer {
+@@ -357,6 +357,26 @@ export class WebClientServer {
  			} catch (err) {/* Ignore Error */ }
  		}
-
+ 
 +		// Parse query parameters for configuration overrides
 +		const queryTheme = typeof parsedUrl.query.theme === 'string' ? parsedUrl.query.theme : undefined;
++		const queryLabel = typeof parsedUrl.query.label === 'string' ? parsedUrl.query.label : undefined;
 +
 +		const configurationDefaults: Record<string, unknown> = {
 +			'workbench.startupEditor': 'none',
@@ -25,10 +25,16 @@ Index: vscode/src/vs/server/node/webClientServer.ts
 +			configurationDefaults['workbench.colorTheme'] = queryTheme;
 +		}
 +
++		// Apply command center label from CLI option or query param (query param takes precedence)
++		const commandCenterLabel = queryLabel ?? this._environmentService.args['command-center-label'];
++		if (commandCenterLabel) {
++			configurationDefaults['workbench.commandCenter.label'] = commandCenterLabel;
++		}
++
  		const workbenchWebConfiguration = {
  			remoteAuthority,
  			serverBasePath: basePath,
-@@ -367,7 +380,8 @@ export class WebClientServer {
+@@ -367,7 +387,8 @@ export class WebClientServer {
  			folderUri: resolveWorkspaceURI(this._environmentService.args['default-folder']),
  			workspaceUri: resolveWorkspaceURI(this._environmentService.args['default-workspace']),
  			productConfiguration,
@@ -36,5 +42,5 @@ Index: vscode/src/vs/server/node/webClientServer.ts
 +			callbackRoute: callbackRoute,
 +			configurationDefaults
  		};
-
+ 
  		const cookies = cookie.parse(req.headers.cookie || '');

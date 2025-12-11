@@ -1,0 +1,180 @@
+Add --command-center-label CLI option
+
+Allows customizing the command center label in the title bar.
+Query param ?label= overrides CLI option. Requires registering the
+configuration key for getValue() to work.
+
+diff --git a/src/vs/server/node/serverEnvironmentService.ts b/src/vs/server/node/serverEnvironmentService.ts
+index ef423dc80fb..7a8b1e3c4f2 100644
+--- a/src/vs/server/node/serverEnvironmentService.ts
++++ b/src/vs/server/node/serverEnvironmentService.ts
+@@ -54,6 +54,8 @@ export const serverOptions: OptionDescriptions<Required<ServerParsedArgs>> = {
+ 	'default-folder': { type: 'string', description: nls.localize('default-folder', 'The workspace folder to open when no input is specified in the browser URL. A relative or absolute path resolved against the current working directory.') },
+ 	'default-workspace': { type: 'string', description: nls.localize('default-workspace', 'The workspace to open when no input is specified in the browser URL. A relative or absolute path resolved against the current working directory.') },
+
++	'command-center-label': { type: 'string', description: nls.localize('command-center-label', 'Custom label to display in the command center instead of the workspace name.') },
++
+ 	'enable-sync': { type: 'boolean' },
+ 	'github-auth': { type: 'string' },
+ 	'use-test-resolver': { type: 'boolean' },
+@@ -177,6 +179,7 @@ export interface ServerParsedArgs {
+
+ 	'default-workspace'?: string;
+ 	'default-folder'?: string;
++	'command-center-label'?: string;
+
+ 	/** @deprecated use default-workspace instead */
+ 	workspace: string;
+diff --git a/src/vs/workbench/browser/parts/titlebar/commandCenterControl.ts b/src/vs/workbench/browser/parts/titlebar/commandCenterControl.ts
+index 2f28eca7419..8f115e36583 100644
+--- a/src/vs/workbench/browser/parts/titlebar/commandCenterControl.ts
++++ b/src/vs/workbench/browser/parts/titlebar/commandCenterControl.ts
+@@ -22,6 +22,9 @@ import { IQuickInputService } from '../../../../platform/quickinput/common/quick
+ import { WindowTitle } from './windowTitle.js';
+ import { IEditorGroupsService } from '../../../services/editor/common/editorGroupsService.js';
+ import { IHoverService } from '../../../../platform/hover/browser/hover.js';
++import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
++import { Registry } from '../../../../platform/registry/common/platform.js';
++import { IConfigurationRegistry, Extensions as ConfigurationExtensions, ConfigurationScope } from '../../../../platform/configuration/common/configurationRegistry.js';
+
+ export class CommandCenterControl {
+
+@@ -86,6 +89,7 @@ class CommandCenterCenterViewItem extends BaseActionViewItem {
+ 		@IKeybindingService private _keybindingService: IKeybindingService,
+ 		@IInstantiationService private _instaService: IInstantiationService,
+ 		@IEditorGroupsService private _editorGroupService: IEditorGroupsService,
++		@IConfigurationService private _configurationService: IConfigurationService,
+ 	) {
+ 		super(undefined, _submenu.actions.find(action => action.id === 'workbench.action.quickOpenWithModes') ?? _submenu.actions[0], options);
+ 		this._hoverDelegate = options.hoverDelegate ?? getDefaultHoverDelegate('mouse');
+@@ -173,6 +177,13 @@ class CommandCenterCenterViewItem extends BaseActionViewItem {
+ 								labelElement.textContent = this._getLabel();
+ 							}
+ 						}));
++
++						// update label when command center label configuration changes
++						this._store.add(that._configurationService.onDidChangeConfiguration(e => {
++							if (e.affectsConfiguration('workbench.commandCenter.label')) {
++								labelElement.textContent = this._getLabel();
++							}
++						}));
+ 					}
+
+ 					protected override getTooltip() {
+@@ -180,6 +191,12 @@ class CommandCenterCenterViewItem extends BaseActionViewItem {
+ 					}
+
+ 					private _getLabel(): string {
++						// Check for custom command center label from configuration
++						const customLabel = that._configurationService.getValue<string>('workbench.commandCenter.label');
++						if (customLabel) {
++							return customLabel;
++						}
++
+ 						const { prefix, suffix } = that._windowTitle.getTitleDecorations();
+ 						let label = that._windowTitle.workspaceName;
+ 						if (that._windowTitle.isCustomTitleFormat()) {
+@@ -235,3 +252,16 @@ MenuRegistry.appendMenuItem(MenuId.CommandCenter, {
+ 	icon: Codicon.shield,
+ 	order: 101,
+ });
++
++// Register command center label configuration
++Registry.as<IConfigurationRegistry>(ConfigurationExtensions.Configuration).registerConfiguration({
++	id: 'workbench',
++	properties: {
++		'workbench.commandCenter.label': {
++			type: 'string',
++			default: '',
++			scope: ConfigurationScope.APPLICATION,
++			description: localize('workbench.commandCenter.label', "Custom label to display in the command center instead of the workspace name.")
++		}
++	}
++});
+diff --git a/src/vs/server/node/serverEnvironmentService.ts b/src/vs/server/node/serverEnvironmentService.ts
+index ef423dc80fb..84752cd3ab5 100644
+--- vscode.orig/src/vs/server/node/serverEnvironmentService.ts
++++ vscode/src/vs/server/node/serverEnvironmentService.ts
+@@ -54,6 +54,8 @@ export const serverOptions: OptionDescriptions<Required<ServerParsedArgs>> = {
+ 	'default-folder': { type: 'string', description: nls.localize('default-folder', 'The workspace folder to open when no input is specified in the browser URL. A relative or absolute path resolved against the current working directory.') },
+ 	'default-workspace': { type: 'string', description: nls.localize('default-workspace', 'The workspace to open when no input is specified in the browser URL. A relative or absolute path resolved against the current working directory.') },
+ 
++	'command-center-label': { type: 'string', description: nls.localize('command-center-label', 'Custom label to display in the command center instead of the workspace name.') },
++
+ 	'enable-sync': { type: 'boolean' },
+ 	'github-auth': { type: 'string' },
+ 	'use-test-resolver': { type: 'boolean' },
+@@ -177,6 +179,7 @@ export interface ServerParsedArgs {
+ 
+ 	'default-workspace'?: string;
+ 	'default-folder'?: string;
++	'command-center-label'?: string;
+ 
+ 	/** @deprecated use default-workspace instead */
+ 	workspace: string;
+diff --git a/src/vs/workbench/browser/parts/titlebar/commandCenterControl.ts b/src/vs/workbench/browser/parts/titlebar/commandCenterControl.ts
+index 2f28eca7419..8f115e36583 100644
+--- vscode.orig/src/vs/workbench/browser/parts/titlebar/commandCenterControl.ts
++++ vscode/src/vs/workbench/browser/parts/titlebar/commandCenterControl.ts
+@@ -22,6 +22,9 @@ import { IQuickInputService } from '../../../../platform/quickinput/common/quick
+ import { WindowTitle } from './windowTitle.js';
+ import { IEditorGroupsService } from '../../../services/editor/common/editorGroupsService.js';
+ import { IHoverService } from '../../../../platform/hover/browser/hover.js';
++import { IConfigurationService } from '../../../../platform/configuration/common/configuration.js';
++import { Registry } from '../../../../platform/registry/common/platform.js';
++import { IConfigurationRegistry, Extensions as ConfigurationExtensions, ConfigurationScope } from '../../../../platform/configuration/common/configurationRegistry.js';
+ 
+ export class CommandCenterControl {
+ 
+@@ -86,6 +89,7 @@ class CommandCenterCenterViewItem extends BaseActionViewItem {
+ 		@IKeybindingService private _keybindingService: IKeybindingService,
+ 		@IInstantiationService private _instaService: IInstantiationService,
+ 		@IEditorGroupsService private _editorGroupService: IEditorGroupsService,
++		@IConfigurationService private _configurationService: IConfigurationService,
+ 	) {
+ 		super(undefined, _submenu.actions.find(action => action.id === 'workbench.action.quickOpenWithModes') ?? _submenu.actions[0], options);
+ 		this._hoverDelegate = options.hoverDelegate ?? getDefaultHoverDelegate('mouse');
+@@ -173,6 +177,13 @@ class CommandCenterCenterViewItem extends BaseActionViewItem {
+ 									labelElement.textContent = this._getLabel();
+ 								}
+ 							}));
++
++							// update label when command center label configuration changes
++							this._store.add(that._configurationService.onDidChangeConfiguration(e => {
++								if (e.affectsConfiguration('workbench.commandCenter.label')) {
++									labelElement.textContent = this._getLabel();
++								}
++							}));
+ 						}
+ 
+ 						protected override getTooltip() {
+@@ -180,6 +191,12 @@ class CommandCenterCenterViewItem extends BaseActionViewItem {
+ 						}
+ 
+ 						private _getLabel(): string {
++							// Check for custom command center label from configuration
++							const customLabel = that._configurationService.getValue<string>('workbench.commandCenter.label');
++							if (customLabel) {
++								return customLabel;
++							}
++
+ 							const { prefix, suffix } = that._windowTitle.getTitleDecorations();
+ 							let label = that._windowTitle.workspaceName;
+ 							if (that._windowTitle.isCustomTitleFormat()) {
+@@ -235,3 +252,16 @@ MenuRegistry.appendMenuItem(MenuId.CommandCenter, {
+ 	icon: Codicon.shield,
+ 	order: 101,
+ });
++
++// Register command center label configuration
++Registry.as<IConfigurationRegistry>(ConfigurationExtensions.Configuration).registerConfiguration({
++	id: 'workbench',
++	properties: {
++		'workbench.commandCenter.label': {
++			type: 'string',
++			default: '',
++			scope: ConfigurationScope.APPLICATION,
++			description: localize('workbench.commandCenter.label', "Custom label to display in the command center instead of the workspace name.")
++		}
++	}
++});
