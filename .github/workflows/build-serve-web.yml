@@ -75,7 +75,6 @@ jobs:
 
       - name: Compile extensions
         run: |
-          npm run gulp clean-extensions-build
           npm run gulp compile-extensions-build
           npm run gulp compile-extension-media-build
         env:
