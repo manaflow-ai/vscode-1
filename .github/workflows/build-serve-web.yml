@@ -101,14 +101,13 @@ jobs:
 
       - name: Create archive
         run: |
-          cd ..
-          tar --owner=0 --group=0 -czf vscode-server-linux-${{ matrix.arch }}-web.tar.gz vscode-server-linux-${{ matrix.arch }}-web
+          tar --owner=0 --group=0 -czf vscode-server-linux-${{ matrix.arch }}-web.tar.gz -C .. vscode-server-linux-${{ matrix.arch }}-web
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: vscode-server-linux-${{ matrix.arch }}-web
-          path: ../vscode-server-linux-${{ matrix.arch }}-web.tar.gz
+          path: vscode-server-linux-${{ matrix.arch }}-web.tar.gz
           retention-days: 30
 
   release:
