@@ -36,6 +36,16 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
+      - name: Setup swap space (to handle memory-intensive builds)
+        if: runner.os == 'Linux'
+        run: |
+          sudo fallocate -l 8G /swapfile
+          sudo chmod 600 /swapfile
+          sudo mkswap /swapfile
+          sudo swapon /swapfile
+          sudo swapon --show
+          free -h
+
       - name: Install system dependencies (Linux)
         if: runner.os == 'Linux'
         run: |
@@ -67,27 +77,24 @@ jobs:
           PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Compile (without mangling to save memory)
-        run: npm run gulp compile-build-without-mangling
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NODE_OPTIONS: --max-old-space-size=8192
-
-      - name: Compile extensions
+      - name: Compile and build extensions
         run: |
+          npm run gulp compile-build-without-mangling
           npm run gulp compile-extensions-build
           npm run gulp compile-extension-media-build
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_OPTIONS: --max-old-space-size=8192
 
-      - name: Bundle
-        run: npm run gulp bundle-vscode-reh-web
+      - name: Bundle and minify
+        run: npm run gulp minify-vscode-reh-web
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_OPTIONS: --max-old-space-size=8192
 
       - name: Build server (web)
         run: |
-          npm run gulp vscode-reh-web-linux-${{ matrix.arch }}-ci
+          npm run gulp vscode-reh-web-linux-${{ matrix.arch }}-min-ci
           mv ../vscode-reh-web-linux-${{ matrix.arch }} ../vscode-server-linux-${{ matrix.arch }}-web
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
