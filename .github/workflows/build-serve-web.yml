@@ -69,10 +69,12 @@ jobs:
 
       - name: Build server (web)
         run: |
-          npm run gulp vscode-reh-web-linux-${{ matrix.arch }}-min
+          # Build without minification to avoid OOM on GitHub runners
+          npm run gulp vscode-reh-web-linux-${{ matrix.arch }}
           mv ../vscode-reh-web-linux-${{ matrix.arch }} ../vscode-server-linux-${{ matrix.arch }}-web
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NODE_OPTIONS: --max-old-space-size=8192
 
       - name: Create archive
         run: |
