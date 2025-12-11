@@ -1,0 +1,28 @@
+Configure OpenVSIX as extension marketplace
+
+Adds extensionsGallery configuration to use Open VSX (open-vsx.org) as the
+extension marketplace instead of Microsoft's restricted marketplace. This
+enables installing extensions in VSCode web builds. Also adds open-vsx.org
+to trusted domains to prevent security warnings.
+diff --git a/product.json b/product.json
+index 53c12af2716..af0f59dc565 100644
+--- vscode.orig/product.json
++++ vscode/product.json
+@@ -2,6 +2,17 @@
+ 	"nameShort": "Code - OSS",
+ 	"nameLong": "Code - OSS",
+ 	"applicationName": "code-oss",
++	"extensionsGallery": {
++		"serviceUrl": "https://open-vsx.org/vscode/gallery",
++		"itemUrl": "https://open-vsx.org/vscode/item",
++		"resourceUrlTemplate": "https://open-vsx.org/vscode/unpkg/{publisher}/{name}/{version}/{path}",
++		"controlUrl": "",
++		"nlsBaseUrl": "",
++		"extensionUrlTemplate": "https://open-vsx.org/vscode/unpkg/{publisher}/{name}/{version}/{path}"
++	},
++	"linkProtectionTrustedDomains": [
++		"https://open-vsx.org"
++	],
+ 	"dataFolderName": ".vscode-oss",
+ 	"win32MutexName": "vscodeoss",
+ 	"licenseName": "MIT",
