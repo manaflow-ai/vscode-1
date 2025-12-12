@@ -150,5 +150,30 @@
 		"github-enterprise": [
 			"GitHub.copilot-chat"
 		]
+	},
+	"extensionEnabledApiProposals": {
+		"ms-python.debugpy": [
+			"portsAttributes",
+			"debugVisualization",
+			"contribViewsWelcome"
+		],
+		"ms-python.python": [
+			"contribEditorContentMenu",
+			"quickPickSortByLabel",
+			"testObserver",
+			"quickPickItemTooltip",
+			"terminalDataWriteEvent",
+			"terminalExecuteCommandEvent",
+			"codeActionAI",
+			"notebookReplDocument",
+			"notebookVariableProvider"
+		],
+		"ms-python.vscode-python-envs": [
+			"terminalShellEnv"
+		],
+		"openai.chatgpt": [
+			"chatSessionsProvider",
+			"languageModelProxy"
+		]
 	}
 }
