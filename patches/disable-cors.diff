@@ -127,7 +127,7 @@ diff --git a/src/vs/server/node/remoteExtensionHostAgentServer.ts b/src/vs/serve
 -				.replace(uuid, '[a-zA-Z0-9\\-]+')
 -		);
 -		try {
--			const originRegExp = createRegExp(\`^\${originRegExpSource}\$\`, true, { matchCase: false });
+-			const originRegExp = createRegExp(`^${originRegExpSource}$`, true, { matchCase: false });
 -			return new WebEndpointOriginChecker(originRegExp);
 -		} catch (err) {
 -			return new WebEndpointOriginChecker(null);

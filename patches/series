@@ -4,3 +4,4 @@ openvsx-gallery.diff
 disable-cors.diff
 chat-status-null-check.diff
 github-extension-commonjs.diff
+default-chat-agent.diff
