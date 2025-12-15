@@ -3,21 +3,24 @@ Set default workbench settings for web mode
 Configures the web workbench to start without a welcome page and with
 the secondary sidebar hidden by default. Also supports ?theme= and ?label=
 query parameters to set the color theme and command center label.
+Disables extension signature verification (Code-OSS lacks Microsoft's signing infrastructure).
+
 diff --git a/src/vs/server/node/webClientServer.ts b/src/vs/server/node/webClientServer.ts
-index 13882a9b44b..f6bc8bb6a37 100644
+index 13882a9..7c737ba 100644
 --- vscode.orig/src/vs/server/node/webClientServer.ts
 +++ vscode/src/vs/server/node/webClientServer.ts
-@@ -357,6 +357,26 @@ export class WebClientServer {
+@@ -357,6 +357,27 @@ export class WebClientServer {
  			} catch (err) {/* Ignore Error */ }
  		}
- 
+
 +		// Parse query parameters for configuration overrides
 +		const queryTheme = typeof parsedUrl.query.theme === 'string' ? parsedUrl.query.theme : undefined;
 +		const queryLabel = typeof parsedUrl.query.label === 'string' ? parsedUrl.query.label : undefined;
 +
 +		const configurationDefaults: Record<string, unknown> = {
 +			'workbench.startupEditor': 'none',
-+			'workbench.secondarySideBar.defaultVisibility': 'hidden'
++			'workbench.secondarySideBar.defaultVisibility': 'hidden',
++			'extensions.verifySignature': false
 +		};
 +
 +		// Apply theme from query param if provided
@@ -34,7 +37,7 @@ index 13882a9b44b..f6bc8bb6a37 100644
  		const workbenchWebConfiguration = {
  			remoteAuthority,
  			serverBasePath: basePath,
-@@ -367,7 +387,8 @@ export class WebClientServer {
+@@ -367,7 +388,8 @@ export class WebClientServer {
  			folderUri: resolveWorkspaceURI(this._environmentService.args['default-folder']),
  			workspaceUri: resolveWorkspaceURI(this._environmentService.args['default-workspace']),
  			productConfiguration,
@@ -42,5 +45,5 @@ index 13882a9b44b..f6bc8bb6a37 100644
 +			callbackRoute: callbackRoute,
 +			configurationDefaults
  		};
- 
+
  		const cookies = cookie.parse(req.headers.cookie || '');
