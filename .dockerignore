@@ -31,7 +31,6 @@ test/
 !README.md
 
 # Development files
-.nvmrc
 .npmrc
 *.log
 npm-debug.log*

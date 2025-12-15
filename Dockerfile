@@ -30,20 +30,16 @@ RUN apt-get update && apt-get install -y \
 
 WORKDIR /build
 
-# Copy package files first for better layer caching
-COPY package.json package-lock.json ./
-COPY build/package.json build/package-lock.json ./build/
+# Copy source code first (simpler, more reliable)
+COPY . .
 
 # Install build dependencies
-RUN cd build && npm ci
+RUN cd build && npm ci --legacy-peer-deps
 
 # Install main dependencies (skip electron/playwright for web build)
 ENV ELECTRON_SKIP_BINARY_DOWNLOAD=1
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
-RUN npm ci
-
-# Copy source code
-COPY . .
+RUN npm ci --legacy-peer-deps
 
 # Apply patches
 RUN ./scripts/apply-patches.sh
