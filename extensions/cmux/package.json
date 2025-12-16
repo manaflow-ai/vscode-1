@@ -1,0 +1,84 @@
+{
+  "name": "cmux-vscode-extension",
+  "displayName": "cmux Terminal",
+  "description": "Persistent PTY terminal backend for cmux",
+  "version": "0.0.1",
+  "publisher": "cmux",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/lawrencecchen/cmux"
+  },
+  "engines": {
+    "vscode": "^1.101.2"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished",
+    "onTerminalProfile:cmux.terminal"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "terminal": {
+      "profiles": [
+        {
+          "id": "cmux.terminal",
+          "title": "cmux"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "cmux.newTerminal",
+        "title": "cmux: New Terminal"
+      },
+      {
+        "command": "cmux.listSessions",
+        "title": "cmux: List Sessions"
+      },
+      {
+        "command": "cmux.reconnectTerminal",
+        "title": "cmux: Reconnect Terminal"
+      },
+      {
+        "command": "cmux.renameTerminal",
+        "title": "cmux: Rename Terminal"
+      }
+    ],
+    "configuration": {
+      "title": "cmux Terminal",
+      "properties": {
+        "cmux.ptyServerUrl": {
+          "type": "string",
+          "default": "http://localhost:9998",
+          "description": "URL of the PTY server"
+        },
+        "cmux.defaultShell": {
+          "type": "string",
+          "default": "/bin/bash",
+          "description": "Default shell for new terminals"
+        },
+        "cmux.autoReconnect": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically reconnect to existing sessions on startup"
+        }
+      }
+    },
+    "configurationDefaults": {
+      "terminal.integrated.defaultProfile.linux": "cmux"
+    }
+  },
+  "scripts": {
+    "compile": "esbuild src/extension.ts --bundle --platform=node --outfile=./out/extension.js --external:vscode --format=cjs",
+    "watch": "esbuild src/extension.ts --bundle --platform=node --outfile=./out/extension.js --external:vscode --format=cjs --watch",
+    "package": "vsce package --allow-missing-repository --no-dependencies --allow-star-activation"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/vscode": "^1.101.0",
+    "esbuild": "^0.24.0",
+    "typescript": "^5.7.0"
+  }
+}

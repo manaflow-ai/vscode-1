@@ -1,0 +1,99 @@
+# VSCode Web with PTY Server
+#
+# Minimal Dockerfile with:
+# - Pre-built cmux-code (VSCode web fork)
+# - Python/uv for PTY server
+# - cmux extension for terminal integration
+#
+# Usage:
+#   docker build -f Dockerfile.pty -t cmux-code-pty .
+#   docker run -p 8080:8080 -p 9999:9999 cmux-code-pty
+
+FROM debian:bookworm-slim
+
+ARG TARGETARCH=amd64
+ARG VERSION=latest
+ARG GITHUB_REPO=manaflow-ai/vscode-1
+
+# Install runtime dependencies including Python
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    curl \
+    git \
+    libsecret-1-0 \
+    libkrb5-3 \
+    procps \
+    tmux \
+    python3 \
+    python3-pip \
+    python3-venv \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install uv (Python package manager)
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
+# Create non-root user
+RUN useradd -m -s /bin/bash vscode
+
+# Download and extract VSCode server
+WORKDIR /opt
+RUN set -ex; \
+    case "${TARGETARCH}" in \
+        amd64) VSCODE_ARCH=x64 ;; \
+        arm64) VSCODE_ARCH=arm64 ;; \
+        *) echo "Unsupported architecture: ${TARGETARCH}" && exit 1 ;; \
+    esac; \
+    if [ "${VERSION}" = "latest" ]; then \
+        DOWNLOAD_URL="https://github.com/${GITHUB_REPO}/releases/latest/download/vscode-server-linux-${VSCODE_ARCH}-web.tar.gz"; \
+    else \
+        DOWNLOAD_URL="https://github.com/${GITHUB_REPO}/releases/download/${VERSION}/vscode-server-linux-${VSCODE_ARCH}-web.tar.gz"; \
+    fi; \
+    echo "Downloading from: ${DOWNLOAD_URL}"; \
+    curl -fsSL "${DOWNLOAD_URL}" -o /tmp/vscode-server.tar.gz; \
+    tar -xzf /tmp/vscode-server.tar.gz; \
+    rm /tmp/vscode-server.tar.gz; \
+    mv vscode-server-linux-*-web vscode-server; \
+    chown -R vscode:vscode /opt/vscode-server
+
+# Copy and install PTY server
+COPY --chown=vscode:vscode pty-server /opt/pty-server
+WORKDIR /opt/pty-server
+RUN python3 -m venv .venv && \
+    .venv/bin/pip install --no-cache-dir -e . && \
+    chown -R vscode:vscode /opt/pty-server
+
+# Copy cmux extension (only package.json and out/)
+COPY --chown=vscode:vscode extensions/cmux/package.json /opt/cmux-extension/package.json
+COPY --chown=vscode:vscode extensions/cmux/out /opt/cmux-extension/out
+
+# Install extension into VSCode server's extensions directory
+RUN mkdir -p /opt/vscode-server/extensions/cmux.cmux-vscode-extension-0.0.1 && \
+    cp -r /opt/cmux-extension/* /opt/vscode-server/extensions/cmux.cmux-vscode-extension-0.0.1/ && \
+    chown -R vscode:vscode /opt/vscode-server/extensions
+
+# Create workspace directory
+RUN mkdir -p /home/vscode/workspace && chown vscode:vscode /home/vscode/workspace
+
+# Copy startup script with execute permissions
+COPY --chmod=755 start.sh /opt/start.sh
+
+# Set working directory
+WORKDIR /home/vscode/workspace
+
+# Switch to non-root user
+USER vscode
+
+# Expose ports
+EXPOSE 8080 9998
+
+# Environment variables
+ENV VSCODE_SERVER_PORT=8080
+ENV PTY_SERVER_PORT=9998
+ENV PTY_SERVER_HOST=0.0.0.0
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
+    CMD curl -f http://localhost:8080/ && curl -f http://localhost:9998/health || exit 1
+
+ENTRYPOINT ["/opt/start.sh"]
+CMD ["/home/vscode/workspace"]
