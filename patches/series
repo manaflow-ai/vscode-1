@@ -1,2 +1,5 @@
 openvsx-gallery.diff
 disable-signature-verification.diff
+workbench-defaults.diff
+command-center-label.diff
+disable-cors.diff
