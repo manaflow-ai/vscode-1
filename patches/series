@@ -3,3 +3,5 @@ disable-signature-verification.diff
 workbench-defaults.diff
 command-center-label.diff
 disable-cors.diff
+chat-status-null-check.diff
+github-extension-commonjs.diff
