@@ -1,9 +1,2 @@
-workbench-defaults.diff
-command-center-label.diff
 openvsx-gallery.diff
-disable-cors.diff
-chat-status-null-check.diff
-github-extension-commonjs.diff
-default-chat-agent.diff
-skip-storage-lock.diff
 disable-signature-verification.diff
